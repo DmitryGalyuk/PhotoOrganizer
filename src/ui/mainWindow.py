@@ -1,7 +1,9 @@
-from ui.folderSelector import FolderSelector
 import tkinter as tk
 from tkinter import ttk
 from ui import Event
+from ui.folderSelector import FolderSelector
+from ui.imageList import ImageList
+
 
 
 class MainWindow():
@@ -21,23 +23,34 @@ class MainWindow():
 
 
     def _createWidgets(self):
-        columns= tk.PanedWindow(self._root, orient=tk.HORIZONTAL)
+        columns = tk.PanedWindow(self._root, orient=tk.HORIZONTAL)
         columns.configure(sashrelief = tk.RAISED, sashwidth=5, sashpad=2)
         columns.pack(fill=tk.BOTH, expand=True)
+        columns.bind("<ButtonRelease-1>", lambda event: (print(sourcePanel.winfo_width())))
 
-        sourcePanel= ttk.Frame(columns)
+        sourcePanel = ttk.Frame(columns)
         sourcePanel.bind("<Configure>", lambda event: self.config.set("UI","leftColumnWidth", str(event.width)))       
-        sourcePanel.pack()
+        sourcePanel.pack(fill=tk.BOTH, expand=True)
 
         sourceFolder = FolderSelector(sourcePanel, path=self.config["Pathes"]["source"])
         sourceFolder.bind(Event, self.getChangeHandler("Pathes", "source", "path"))
-        sourceFolder.pack(side=tk.TOP, fill=tk.X, expand=False)
+        sourceFolder.pack(fill=tk.X, expand=False, pady=2)
 
-        framePhotos= ttk.Frame(columns)
+        imageList = ImageList(sourcePanel, relief=tk.SUNKEN)
+        imageList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
+        self._root.after(500, imageList.renderImages)
+
+        framePhotos = ttk.Frame(columns)
         framePhotos.pack(fill=tk.BOTH, expand=True)
 
+        rightLabel = ttk.Label(columns, text="my fance label")
+        rightLabel.pack(pady=2, padx=2)
+
         columns.add(sourcePanel)
-        columns.add(framePhotos, sticky=tk.NSEW)
+        columns.add(framePhotos, sticky=tk.NSEW, stretch="middle")
+        columns.add(rightLabel, stretch="middle")
+
+        columns
 
         columns.paneconfigure(sourcePanel, width=self.config["UI"]["leftColumnWidth"])
 
