@@ -36,14 +36,12 @@ class MainWindow():
         columns = tk.PanedWindow(self._root, orient=tk.HORIZONTAL)
         columns.configure(sashrelief = tk.RAISED, sashwidth=5, sashpad=2)
         columns.pack(fill=tk.BOTH, expand=True)
-        columns.bind("<ButtonRelease-1>", lambda event: (print(sourcePanel.winfo_width())))
 
         sourcePanel = ttk.Frame(columns)
-        sourcePanel.bind("<Configure>", lambda event: self.config.set("UI","leftColumnWidth", str(event.width)))       
         sourcePanel.pack(fill=tk.BOTH, expand=True)
 
         sourceFolder = FolderSelector(sourcePanel, path=self.config["Pathes"]["source"])
-        sourceFolder.bind(Event, self.getChangeHandler("Pathes", "source", "path"))
+        sourceFolder.bind(Event, self._getChangeHandler("Pathes", "source", "path"))
         sourceFolder.pack(fill=tk.X, expand=False, pady=2)
 
         path = "/Users/dmitrygalyuk/Dropbox/Projects/py/TestApp/photos"
@@ -53,6 +51,7 @@ class MainWindow():
         # self._root.after(500, self.imageList.renderImages)
 
         middlePanes = tk.PanedWindow(columns, orient=tk.VERTICAL)
+        middlePanes.configure(sashrelief = tk.RAISED, sashwidth=5, sashpad=2)
         middlePanes.pack()
 
         framePhotos = ttk.Frame(middlePanes)
@@ -62,6 +61,9 @@ class MainWindow():
         trashPanel = ttk.Frame(middlePanes)
         self.trashList = ImageList(trashPanel, orient=tk.HORIZONTAL, path=path)
         self.trashList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
+
+        columns.bind("<ButtonRelease-1>", self._getResizeHandler(self.imageList, "UI","leftColumnWidth"))
+        middlePanes.bind("<ButtonRelease-1>", self._getResizeHandler(self.trashList, "UI","trashPanelHeight"))
 
         middlePanes.add(framePhotos, stretch="first")
         middlePanes.add(trashPanel, stretch="first")
@@ -74,7 +76,15 @@ class MainWindow():
         columns.add(rightLabel, stretch="middle")
 
         columns.paneconfigure(sourcePanel, width=self.config["UI"]["leftColumnWidth"])
+        middlePanes.paneconfigure(trashPanel, height=self.config["UI"]["trashPanelHeight"])
 
-
-    def getChangeHandler(self, section, option, widgetProp):
+    def _getResizeHandler(self, imageList, configSection, configOption):
+        def handler(e):
+            newSize = imageList.winfo_width() if imageList.orient==tk.VERTICAL else imageList.winfo_height()
+            # imageList.resizeThumbs( (newSize, newSize) )
+            self.config[configSection][configOption] = str(newSize)
+        return handler
+    
+    
+    def _getChangeHandler(self, section, option, widgetProp):
         return lambda event: self.config.set(section, option, getattr(event.widget, widgetProp))

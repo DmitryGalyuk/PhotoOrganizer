@@ -30,17 +30,6 @@ class ImageList(ttk.Frame):
 
 
     def renderImages(self):
-        def loadAndResize(photo, size):
-            p = Photo(p)
-            p.resize(size, size)
-            return p
-
-        def renderPhotoAtIndex(photo, offset):
-            if self.orient==tk.VERTICAL:
-                self.canvas.create_image(10, offset, anchor=tk.NW, image=photo.imgTk())
-            else:
-                self.canvas.create_image(offset, 10, anchor=tk.NW, image=photo.imgTk())
-
         pathes = []
         for file in os.listdir(self.path):
             pathes.append(os.path.join(self.path, file))
