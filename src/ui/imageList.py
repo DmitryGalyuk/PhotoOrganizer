@@ -3,7 +3,6 @@ from tkinter import ttk
 from photo import Photo
 import os
 import concurrent.futures
-from multiprocessing import Pool
 
 
 class ImageList(ttk.Frame):
@@ -44,10 +43,19 @@ class ImageList(ttk.Frame):
         futurePhotos = None
         resizedPhotos = []
         print("photos loaded")
-
-        with Pool(5) as pool:
-            pool.map(resPhoto, [(photo, size, size) for photo in self.photos])
-  
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futurePhotos = [ executor.submit(resPhoto, photo, size, size) for photo in self.photos ]
+            print("submitted")
+            for f in concurrent.futures.as_completed(futurePhotos):
+                try:
+                    print("before calling result")
+                    f.result()
+                except Exception as identifier:
+                    print(identifier)
+                    raise
+                else:
+                    print(len(resPhoto))
+                
 
         # for photo in self.photos:
         for photo in resizedPhotos:
