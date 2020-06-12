@@ -3,7 +3,8 @@ from tkinter import ttk
 from photo import Photo
 import os
 import concurrent.futures as cf
-
+from datetime import datetime
+from pathlib import Path
 
 class ImageList(ttk.Frame):
 
@@ -12,12 +13,17 @@ class ImageList(ttk.Frame):
 
         if not name: raise ValueError("name is required")
         if not path: raise ValueError("path is required")
-
         self.name = name
-        self.canvas = tk.Canvas(self)
         self.orient = orient
-        self.canvas.bind("<MouseWheel>", self._on_mousewheel)
         self.path = path
+
+        self.pathToDate = { str(p): datetime.fromtimestamp(p.stat().st_mtime) 
+            for p in Path(path).iterdir() 
+            if p.is_file() and p.suffix in [".jpg", ".jpeg", ".png"]
+        }
+
+        self.canvas = tk.Canvas(self)
+        self.canvas.bind("<MouseWheel>", self._on_mousewheel)
 
         if orient == tk.VERTICAL:
             scroll = ttk.Scrollbar(self, orient=tk.VERTICAL)
@@ -34,18 +40,20 @@ class ImageList(ttk.Frame):
 
 
     def renderImages(self):
-        pathes = []
+        
+
         padding = 20
-        for file in os.listdir(self.path):
-            pathes.append(os.path.join(self.path, file))
 
         size = self.canvas.winfo_width() if self.orient==tk.VERTICAL else self.canvas.winfo_height()
 
         self.photos = [ ]
 
         with cf.ThreadPoolExecutor() as executor:
-            self.photos = [f.result() for f in cf.as_completed([ executor.submit(Photo, path) for path in pathes]) ]
+            self.photos = [f.result() for f in cf.as_completed(
+                [ executor.submit(Photo, path) for path in self.pathToDate.keys()]) ]
             cf.wait([ executor.submit(photo.resize, size-padding,size-padding) for photo in self.photos])
+
+        self.photos = list(reversed(sorted(self.photos, key=lambda p: self.pathToDate[p.path])))
 
         offset = padding
         for photo in self.photos:
