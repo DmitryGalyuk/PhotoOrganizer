@@ -36,18 +36,31 @@ class MainWindow():
         sourceFolder.bind(Event, self.getChangeHandler("Pathes", "source", "path"))
         sourceFolder.pack(fill=tk.X, expand=False, pady=2)
 
-        imageList = ImageList(sourcePanel, relief=tk.SUNKEN)
+        path = "/Users/dmitrygalyuk/Dropbox/Projects/py/TestApp/photos"
+        imageList = ImageList(sourcePanel, relief=tk.SUNKEN, path=path)
         imageList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
-        self._root.after(500, imageList.renderImages)
+        self._root.after(2000, imageList.renderImages)
 
-        framePhotos = ttk.Frame(columns)
+        middlePanes = tk.PanedWindow(columns, orient=tk.VERTICAL)
+        middlePanes.pack()
+
+        framePhotos = ttk.Frame(middlePanes)
         framePhotos.pack(fill=tk.BOTH, expand=True)
+
+        path = "/Users/dmitrygalyuk/Downloads/Favorites"
+        trashPanel = ttk.Frame(middlePanes)
+        trashList = ImageList(trashPanel, orient=tk.HORIZONTAL, path=path)
+        trashList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
+        self._root.after(2000, trashList.renderImages)
+
+        middlePanes.add(framePhotos, stretch="first")
+        middlePanes.add(trashPanel, stretch="first")
 
         rightLabel = ttk.Label(columns, text="my fance label")
         rightLabel.pack(pady=2, padx=2)
 
         columns.add(sourcePanel)
-        columns.add(framePhotos, sticky=tk.NSEW, stretch="middle")
+        columns.add(middlePanes, sticky=tk.NSEW, stretch="middle")
         columns.add(rightLabel, stretch="middle")
 
         columns

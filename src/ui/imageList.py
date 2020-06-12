@@ -2,40 +2,74 @@ import tkinter as tk
 from tkinter import ttk
 from photo import Photo
 import os
+import concurrent.futures
+from multiprocessing import Pool
 
 
 class ImageList(ttk.Frame):
 
-    def __init__(self, master=None, **kw):
+    def __init__(self, master=None, orient=tk.VERTICAL, path=None, **kw):
         super().__init__(master=master, **kw)
 
         self.canvas = tk.Canvas(self)
-        self.vscroll = ttk.Scrollbar(self, orient=tk.VERTICAL)
-        self.vscroll.pack(side=tk.RIGHT,fill=tk.Y)
-        self.vscroll.config(command=self.canvas.yview)
-        self.canvas.config(yscrollcommand=self.vscroll.set)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.orient = orient
         self.canvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.path = path
+
+        if orient == tk.VERTICAL:
+            scroll = ttk.Scrollbar(self, orient=tk.VERTICAL)
+            scroll.pack(side=tk.RIGHT,fill=tk.Y)
+            scroll.config(command=self.canvas.yview)
+            self.canvas.config(yscrollcommand=scroll.set)
+            self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        else:
+            scroll = ttk.Scrollbar(self, orient=tk.HORIZONTAL)
+            scroll.pack(side=tk.BOTTOM,fill=tk.X)
+            scroll.config(command=self.canvas.xview)
+            self.canvas.config(xscrollcommand=scroll.set)
+            self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
 
     def renderImages(self):
-        
-        path = "/Users/dmitrygalyuk/Dropbox/Projects/py/TestApp/photos"
-        # path = "/Users/dmitrygalyuk/Downloads/Favorites"
+        print("rendering")
         pathes = []
-        for file in os.listdir(path):
-            pathes.append(os.path.join(path, file))
-
-        self.photos = [ Photo(path) for path in pathes[20:25] ]
+        for file in os.listdir(self.path):
+            pathes.append(os.path.join(self.path, file))
 
         offset = 20
-        wid = self.canvas.winfo_width()
+        size = self.canvas.winfo_width() if self.orient==tk.VERTICAL else self.canvas.winfo_height()
 
-        for photo in self.photos:
-            photo.resize(wid-40, wid-40)
-            self.canvas.create_image(10, offset, anchor=tk.NW, image=photo.imageTk)
-            offset += photo.thumbHeight+20
+        self.photos = [ Photo(path) for path in pathes[:3] ]
+
+        futurePhotos = None
+        resizedPhotos = []
+        print("photos loaded")
+
+        with Pool(5) as pool:
+            pool.map(resPhoto, [(photo, size, size) for photo in self.photos])
+  
+
+        # for photo in self.photos:
+        for photo in resizedPhotos:
+            # photo.resize(size-40, size-40)
+            if self.orient==tk.VERTICAL:
+                self.canvas.create_image(10, offset, anchor=tk.NW, image=photo.imageTk)
+                offset += photo.thumbHeight+20
+                self.canvas.config(scrollregion=(0,0,500,offset))
+            else:
+                self.canvas.create_image(offset, 10, anchor=tk.NW, image=photo.imageTk)
+                offset += photo.thumbWidth+20
+                self.canvas.config(scrollregion=(0,0,offset,500))
         
-        self.canvas.config(scrollregion=(0,0,500,offset))
+        print("done")
         
     def _on_mousewheel(self, event):
-        self.canvas.yview_scroll(-1*(event.delta), "units")
+        if self.orient == tk.VERTICAL:
+            self.canvas.yview_scroll(-1*(event.delta), "units")
+        else:
+            self.canvas.xview_scroll(-1*(event.delta), "units")
+
+def resPhoto(photo, x,y):
+    print("start resizing")
+    photo.resize(x,y)
+    print("resized")
