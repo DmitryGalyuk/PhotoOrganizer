@@ -7,9 +7,13 @@ import concurrent.futures as cf
 
 class ImageList(ttk.Frame):
 
-    def __init__(self, master=None, orient=tk.VERTICAL, path=None, **kw):
+    def __init__(self, master=None, name=None, orient=tk.VERTICAL, path=None, **kw):
         super().__init__(master=master, **kw)
 
+        if not name: raise ValueError("name is required")
+        if not path: raise ValueError("path is required")
+
+        self.name = name
         self.canvas = tk.Canvas(self)
         self.orient = orient
         self.canvas.bind("<MouseWheel>", self._on_mousewheel)
@@ -31,6 +35,7 @@ class ImageList(ttk.Frame):
 
     def renderImages(self):
         pathes = []
+        padding = 20
         for file in os.listdir(self.path):
             pathes.append(os.path.join(self.path, file))
 
@@ -40,10 +45,9 @@ class ImageList(ttk.Frame):
 
         with cf.ThreadPoolExecutor() as executor:
             self.photos = [f.result() for f in cf.as_completed([ executor.submit(Photo, path) for path in pathes]) ]
+            cf.wait([ executor.submit(photo.resize, size-padding,size-padding) for photo in self.photos])
 
-        self.resizeThumbs((size,size))
-
-        offset = padding = 20
+        offset = padding
         for photo in self.photos:
             if self.orient==tk.VERTICAL:
                 self.canvas.create_image(10, offset, anchor=tk.NW, image=photo.imgTk())
@@ -57,9 +61,7 @@ class ImageList(ttk.Frame):
         else:
             self.canvas.config(scrollregion=(0,0, size+padding, offset))
 
-    def resizeThumbs(self, boxToFit):
-          with cf.ThreadPoolExecutor() as executor:
-            cf.wait([ executor.submit(photo.resize, boxToFit[0], boxToFit[0]) for photo in self.photos])
+            
       
 
     def _on_mousewheel(self, event):

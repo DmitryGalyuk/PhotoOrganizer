@@ -31,8 +31,15 @@ class Config():
         defaults = {
             "UI": {
                 "geometry": "800x600+50+50",
-                "leftColumnWidth": "400",
-                "trashPanelHeight": "200"
+            },
+            "sourceList": {
+                "Width": "400",
+            },
+            "trashList": {
+                "height": "400",
+            },
+            "outputList": {
+                "Width": "400",
             },
             "Pathes": {
                 "source": os.path.expanduser("~"),

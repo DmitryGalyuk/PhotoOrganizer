@@ -46,7 +46,7 @@ class MainWindow():
 
         path = "/Users/dmitrygalyuk/Dropbox/Projects/py/TestApp/photos"
         # path = "/Users/dmitrygalyuk/Dropbox/Camera Uploads"
-        self.imageList = ImageList(sourcePanel, relief=tk.SUNKEN, path=path)
+        self.imageList = ImageList(sourcePanel,name="sourceList", relief=tk.SUNKEN, path=path)
         self.imageList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
         # self._root.after(500, self.imageList.renderImages)
 
@@ -59,32 +59,44 @@ class MainWindow():
 
         path = "/Users/dmitrygalyuk/Downloads/Favorites"
         trashPanel = ttk.Frame(middlePanes)
-        self.trashList = ImageList(trashPanel, orient=tk.HORIZONTAL, path=path)
+        self.trashList = ImageList(trashPanel, name="trashList", orient=tk.HORIZONTAL, path=path)
         self.trashList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
 
-        columns.bind("<ButtonRelease-1>", self._getResizeHandler(self.imageList, "UI","leftColumnWidth"))
-        middlePanes.bind("<ButtonRelease-1>", self._getResizeHandler(self.trashList, "UI","trashPanelHeight"))
+        columns.bind("<ButtonRelease-1>", self._onPaneResize)
+        middlePanes.bind("<ButtonRelease-1>", self._onPaneResize)
 
         middlePanes.add(framePhotos, stretch="first")
         middlePanes.add(trashPanel, stretch="first")
 
-        rightLabel = ttk.Label(columns, text="my fance label")
+        rightLabel = ttk.Label(columns, text="my fancy label")
         rightLabel.pack(pady=2, padx=2)
 
         columns.add(sourcePanel)
         columns.add(middlePanes, sticky=tk.NSEW, stretch="middle")
         columns.add(rightLabel, stretch="middle")
 
-        columns.paneconfigure(sourcePanel, width=self.config["UI"]["leftColumnWidth"])
-        middlePanes.paneconfigure(trashPanel, height=self.config["UI"]["trashPanelHeight"])
+        columns.paneconfigure(sourcePanel, width=self.config[self.imageList.name]["width"])
+        middlePanes.paneconfigure(trashPanel, height=self.config[self.trashList.name]["height"])
 
-    def _getResizeHandler(self, imageList, configSection, configOption):
-        def handler(e):
-            newSize = imageList.winfo_width() if imageList.orient==tk.VERTICAL else imageList.winfo_height()
-            # imageList.resizeThumbs( (newSize, newSize) )
-            self.config[configSection][configOption] = str(newSize)
-        return handler
-    
+    def _onPaneResize(self, e):
+        def allChildren(widget, result=[]):
+            children = widget.winfo_children()
+            result.extend(children)
+            result.extend([allChildren(c, result) for c in children if len(children)])
+            return result
+        
+        lists = [l for l in allChildren(e.widget) if isinstance(l, ImageList)]
+
+        for imgList in lists:
+            oldSize = self.config[imgList.name]
+            newSize = imgList.winfo_width() if imgList.orient==tk.VERTICAL else imgList.winfo_height()
+            if oldSize == newSize: continue
+
+            option = "height" if imgList.orient==tk.HORIZONTAL else "width"
+            self.config[imgList.name][option] = str(newSize)
+            imgList.renderImages()
+         
+        
     
     def _getChangeHandler(self, section, option, widgetProp):
         return lambda event: self.config.set(section, option, getattr(event.widget, widgetProp))
