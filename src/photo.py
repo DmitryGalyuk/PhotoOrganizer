@@ -4,30 +4,33 @@ import math
 class Photo():
     def __init__(self, path, size=(1000, 1000)):
         self.path = path
-        self.image = Image.open(path)
-        self.image = fixOrientation(self.image)
-        self.originalHeight = self.image.height
-        self.originalWidth = self.image.width
+        self.originalImage = Image.open(path)
+        self.originalImage = fixOrientation(self.originalImage)
+        self.originalHeight = self.originalImage.height
+        self.originalWidth = self.originalImage.width
 
         calc = scaleSize((self.originalWidth, self.originalHeight), size)
         self.thumbWidth = calc[0]
         self.thumbHeight = calc[1]
-        self.image.thumbnail(size)
+        self.thumb = self.originalImage.copy()
+        self.thumb.thumbnail(size)
+        self.imageTk = None
 
-        self.imageTk = ImageTk.PhotoImage(self.image)
+    def imgTk(self):
+        if self.imageTk is None:
+            self.imageTk = ImageTk.PhotoImage(self.thumb)
+        return self.imageTk
 
 
     def resize(self, w, h):
         if w < 2: return
-        t = self.image.copy()
-        print("image copied")
+        t = self.originalImage.copy()
         calc = scaleSize((self.originalWidth, self.originalHeight), (w,h))
         self.thumbWidth = calc[0]
         self.thumbHeight = calc[1]
         t.thumbnail((w,h))
-        print("thumb createed")
-        self.imageTk = ImageTk.PhotoImage(t)
-        print("imagetk createed")
+        self.thumb = t
+        self.imageTk = None
 
 def fixOrientation(image):
     try:

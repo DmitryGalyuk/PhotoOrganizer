@@ -1,4 +1,5 @@
 import tkinter as tk
+# import mtTkinter as mtk
 from tkinter import ttk
 from ui import Event
 from ui.folderSelector import FolderSelector
@@ -39,7 +40,7 @@ class MainWindow():
         path = "/Users/dmitrygalyuk/Dropbox/Projects/py/TestApp/photos"
         imageList = ImageList(sourcePanel, relief=tk.SUNKEN, path=path)
         imageList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
-        self._root.after(2000, imageList.renderImages)
+        self._root.after(500, imageList.renderImages)
 
         middlePanes = tk.PanedWindow(columns, orient=tk.VERTICAL)
         middlePanes.pack()
@@ -51,7 +52,7 @@ class MainWindow():
         trashPanel = ttk.Frame(middlePanes)
         trashList = ImageList(trashPanel, orient=tk.HORIZONTAL, path=path)
         trashList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
-        self._root.after(2000, trashList.renderImages)
+        self._root.after(500, trashList.renderImages)
 
         middlePanes.add(framePhotos, stretch="first")
         middlePanes.add(trashPanel, stretch="first")

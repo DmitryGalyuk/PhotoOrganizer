@@ -30,7 +30,6 @@ class ImageList(ttk.Frame):
 
 
     def renderImages(self):
-        print("rendering")
         pathes = []
         for file in os.listdir(self.path):
             pathes.append(os.path.join(self.path, file))
@@ -38,38 +37,24 @@ class ImageList(ttk.Frame):
         offset = 20
         size = self.canvas.winfo_width() if self.orient==tk.VERTICAL else self.canvas.winfo_height()
 
-        self.photos = [ Photo(path) for path in pathes[:3] ]
+        self.photos = [ Photo(path) for path in pathes[:15] ]
 
-        futurePhotos = None
-        resizedPhotos = []
-        print("photos loaded")
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futurePhotos = [ executor.submit(resPhoto, photo, size, size) for photo in self.photos ]
-            print("submitted")
-            for f in concurrent.futures.as_completed(futurePhotos):
-                try:
-                    print("before calling result")
-                    f.result()
-                except Exception as identifier:
-                    print(identifier)
-                    raise
-                else:
-                    print(len(resPhoto))
-                
+            concurrent.futures.wait([ executor.submit(resPhoto, photo, size, size) for photo in self.photos ])
+              
 
         # for photo in self.photos:
-        for photo in resizedPhotos:
+        for photo in self.photos:
             # photo.resize(size-40, size-40)
             if self.orient==tk.VERTICAL:
-                self.canvas.create_image(10, offset, anchor=tk.NW, image=photo.imageTk)
+                self.canvas.create_image(10, offset, anchor=tk.NW, image=photo.imgTk())
                 offset += photo.thumbHeight+20
                 self.canvas.config(scrollregion=(0,0,500,offset))
             else:
-                self.canvas.create_image(offset, 10, anchor=tk.NW, image=photo.imageTk)
+                self.canvas.create_image(offset, 10, anchor=tk.NW, image=photo.imgTk())
                 offset += photo.thumbWidth+20
                 self.canvas.config(scrollregion=(0,0,offset,500))
         
-        print("done")
         
     def _on_mousewheel(self, event):
         if self.orient == tk.VERTICAL:
