@@ -1,9 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
-from photo import Photo, scaleSize
+from photo import Photo
 import os
 import concurrent.futures as cf
-import queue
 
 
 class ImageList(ttk.Frame):
@@ -50,51 +49,33 @@ class ImageList(ttk.Frame):
 
         self.photos = [ ]
 
-        mainThreadQueue = queue.Queue()
         with cf.ThreadPoolExecutor() as executor:
             self.photos = [f.result() for f in cf.as_completed([ executor.submit(Photo, path) for path in pathes]) ]
 
-            photoOffset = thumbOffsets(self.photos, (size,size), self.orient, 20)
-            if self.orient==tk.HORIZONTAL:
-                self.canvas.config(scrollregion=(0,0, photoOffset[self.photos[-1]], size+50))
+        self.resizeThumbs((size,size))
+
+        offset = padding = 20
+        for photo in self.photos:
+            if self.orient==tk.VERTICAL:
+                self.canvas.create_image(10, offset, anchor=tk.NW, image=photo.imgTk())
+                offset += photo.thumbHeight + padding
             else:
-                self.canvas.config(scrollregion=(0,0, size+50, photoOffset[self.photos[-1]]))
+                self.canvas.create_image(offset, 10, anchor=tk.NW, image=photo.imgTk())
+                offset += photo.thumbWidth + padding
 
-            # futurePhotos = [ executor.submit(loadAndResize, path, size) for path in pathes ]
-            futurePhotos = {executor.submit(
-                photoResizeWithCallback, 
-                    photo, size, size, mainThreadQueue, renderPhotoAtIndex, photoOffset[photo]
-                ): photo for photo in self.photos}
+        if self.orient==tk.HORIZONTAL:
+            self.canvas.config(scrollregion=(0,0, offset, size+padding))
+        else:
+            self.canvas.config(scrollregion=(0,0, size+padding, offset))
 
+    def resizeThumbs(self, boxToFit):
+          with cf.ThreadPoolExecutor() as executor:
+            cf.wait([ executor.submit(photo.resize, boxToFit[0], boxToFit[0]) for photo in self.photos])
+      
 
-            for i in range(len(self.photos)):
-                mainThreadQueue.get(True)()
-                i += 1
-
-
-              
-
-    
-    
-            
-        
     def _on_mousewheel(self, event):
         if self.orient == tk.VERTICAL:
             self.canvas.yview_scroll(-1*(event.delta), "units")
         else:
             self.canvas.xview_scroll(-1*(event.delta), "units")
 
-def photoResizeWithCallback(photo, w, h, queue, callback, offset):
-    photo.resize(w,h)
-    queue.put(lambda: callback(photo, offset))
-
-def thumbOffsets(photos, boxToFit, orient, padding):
-    result = {}
-    offset = 0
-    for p in photos:
-        offset += padding
-        thumbSize = scaleSize((p.originalWidth, p.originalHeight), boxToFit)
-        result[p] = offset
-        offset += (thumbSize[0] if orient==tk.HORIZONTAL else thumbSize[1])
-    return result
-    
