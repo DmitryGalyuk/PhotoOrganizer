@@ -17,9 +17,18 @@ class MainWindow():
         self._root.title("Photo Organizer")
 
         self._root.geometry(self.config["UI"]["geometry"])
-        self._root.bind("<Configure>", lambda event: self.config.set("UI", "geometry", self._root.geometry()))
 
         self._createWidgets()
+
+        self._root.bind("<Configure>", lambda event: self.config.set("UI", "geometry", self._root.geometry()))
+
+        def renderImageLists():
+            self.imageList.renderImages()
+            self.trashList.renderImages()
+
+        self._root.after(500, renderImageLists)
+
+
         self._root.mainloop()
 
 
@@ -38,9 +47,10 @@ class MainWindow():
         sourceFolder.pack(fill=tk.X, expand=False, pady=2)
 
         path = "/Users/dmitrygalyuk/Dropbox/Projects/py/TestApp/photos"
-        imageList = ImageList(sourcePanel, relief=tk.SUNKEN, path=path)
-        imageList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
-        self._root.after(500, imageList.renderImages)
+        # path = "/Users/dmitrygalyuk/Dropbox/Camera Uploads"
+        self.imageList = ImageList(sourcePanel, relief=tk.SUNKEN, path=path)
+        self.imageList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
+        # self._root.after(500, self.imageList.renderImages)
 
         middlePanes = tk.PanedWindow(columns, orient=tk.VERTICAL)
         middlePanes.pack()
@@ -50,9 +60,8 @@ class MainWindow():
 
         path = "/Users/dmitrygalyuk/Downloads/Favorites"
         trashPanel = ttk.Frame(middlePanes)
-        trashList = ImageList(trashPanel, orient=tk.HORIZONTAL, path=path)
-        trashList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
-        self._root.after(500, trashList.renderImages)
+        self.trashList = ImageList(trashPanel, orient=tk.HORIZONTAL, path=path)
+        self.trashList.pack(fill=tk.BOTH, expand=True, pady=2, padx=2)
 
         middlePanes.add(framePhotos, stretch="first")
         middlePanes.add(trashPanel, stretch="first")
@@ -63,8 +72,6 @@ class MainWindow():
         columns.add(sourcePanel)
         columns.add(middlePanes, sticky=tk.NSEW, stretch="middle")
         columns.add(rightLabel, stretch="middle")
-
-        columns
 
         columns.paneconfigure(sourcePanel, width=self.config["UI"]["leftColumnWidth"])
 
