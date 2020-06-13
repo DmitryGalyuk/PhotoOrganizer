@@ -15,12 +15,15 @@ class MainWindow():
     def showUI(self):
         self._root = tk.Tk()
         self._root.title("Photo Organizer")
-
         self._root.geometry(self.config["UI"]["geometry"])
 
         self._createWidgets()
 
-        self._root.bind("<Configure>", lambda event: self.config.set("UI", "geometry", self._root.geometry()))
+        def onResize(e):
+            self.config.set("UI", "geometry", self._root.geometry())
+            renderImageLists()
+
+        # self._root.bind("<Configure>", onResize, True)
 
         def renderImageLists():
             self.imageList.renderImages()
